@@ -1,12 +1,18 @@
 // Name: Given Asser Sianturi
 // NIM: 2481012
 // Course: Framework .NET Programming
-
+using Microsoft.EntityFrameworkCore;
+using StudentInformationSystem.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+var connectionString = builder.Configuration
+    .GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Missing database connection.");
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -32,5 +38,11 @@ app.MapControllerRoute(
 // Enable attribute-routed API controllers.
 app.MapControllers();
 
-app.Run();
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await StudentSeeder.SeedAsync(db);
+}
 
+app.Run();

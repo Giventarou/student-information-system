@@ -1,24 +1,21 @@
-﻿// Name: Given Asser Sianturi
-// NIM: 2481012
-// Course: Framework .NET Programming
-
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudentInformationSystem.Data;
-using StudentInformationSystem.Models;
 
-namespace StudentInformationSystem.Controllers
+namespace StudentInformationSystem.Controllers;
+
+public class StudentController : Controller
 {
-    // Handles requests for student web pages.
-    public class StudentController : Controller
-    {
-        // Displays the first student's profile.
-        public IActionResult Profile()
-        {
-            // Retrieve the first student from shared data.
-            Student student = StudentData.Students[0];
+    private readonly ApplicationDbContext _db;
 
-            // Send the Student object to the Razor View.
-            return View(student);
-        }
+    public StudentController(ApplicationDbContext db) => _db = db;
+
+    public async Task<IActionResult> Profile(string? nim)
+    {
+        var student = string.IsNullOrWhiteSpace(nim)
+            ? await _db.Students.AsNoTracking().OrderBy(s => s.Id).FirstOrDefaultAsync()
+            : await _db.Students.AsNoTracking().FirstOrDefaultAsync(s => s.NIM == nim);
+
+        return student is null ? NotFound() : View(student);
     }
 }
